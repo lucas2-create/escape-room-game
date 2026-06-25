@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Escape Room – 4 Cipher Layers</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: #12121e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: #1e1e32;
+            border-radius: 32px;
+            padding: 30px 28px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            color: #eceaf5;
+            transition: 0.3s;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 3px;
+            border-bottom: 2px solid #4e4a6e;
+            padding-bottom: 14px;
+            margin-top: 4px;
+        }
+        .password-display {
+            background: #0e0e1a;
+            border-radius: 60px;
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 2.2rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 12px;
+            margin: 18px 0 22px;
+            border: 2px solid #3b3a5a;
+            color: #f9d56e;
+        }
+        .password-display .hidden {
+            color: #4a4a6a;
+        }
+        .layer-indicator {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+        .layer-dot {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 40px;
+            background: #2a2a44;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6a6a8a;
+            transition: 0.3s;
+        }
+        .layer-dot.active {
+            background: #f9d56e;
+            color: #1a1a2e;
+            box-shadow: 0 0 20px #f9d56e44;
+        }
+        .layer-dot.done {
+            background: #4caf7a;
+            color: #fff;
+        }
+        .clue-box {
+            background: #2a2a44;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin: 16px 0 18px;
+            border-left: 6px solid #f9d56e;
+        }
+        .clue-label {
+            font-size: 0.85rem;
+            color: #aaa8c9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .clue-value {
+            font-size: 2.2rem;
+            font-family: 'Courier New', monospace;
+            background: #12121e;
+            padding: 10px 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 6px 0 10px;
+            word-break: break-all;
+            letter-spacing: 2px;
+        }
+        .input-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .input-row input {
+            flex: 2;
+            min-width: 120px;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            background: #12121e;
+            color: #fff;
+            outline: 2px solid #4e4a6e;
+            transition: 0.2s;
+        }
+        .input-row input:focus {
+            outline-color: #f9d56e;
+        }
+        .input-row button {
+            flex: 1;
+            background: #f9d56e;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #1a1a2e;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 0 #b8953e;
+            transform: translateY(-2px);
+        }
+        .input-row button:active {
+            transform: translateY(2px);
+            box-shadow: 0 0px 0 #b8953e;
+        }
+        .input-row button:disabled {
+            opacity: 0.5;
+            transform: translateY(0);
+            box-shadow: none;
+            pointer-events: none;
+        }
+        .feedback {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 40px;
+            font-weight: 500;
+            text-align: center;
+            display: none;
+        }
+        .feedback.success {
+            display: block;
+            background: #1f4a3a;
+            color: #a5f0c0;
+        }
+        .feedback.error {
+            display: block;
+            background: #5a2a2a;
+            color: #f5a5a5;
+        }
+        .feedback.done {
+            display: block;
+            background: #2a3a5a;
+            color: #aac8ff;
+        }
+        .reset-area {
+            text-align: center;
+            margin-top: 24px;
+        }
+        .reset-area button {
+            background: transparent;
+            border: 2px solid #4e4a6e;
+            color: #b7b5d9;
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .reset-area button:hover {
+            border-color: #f9d56e;
+            color: #f9d56e;
+        }
+        .celebrate {
+            font-size: 2.5rem;
+            text-align: center;
+            animation: pulse 1.2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        @media (max-width: 480px) {
+            .card { padding: 20px 16px; }
+            .password-display { font-size: 1.6rem; letter-spacing: 8px; }
+            .clue-value { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="app">
+    <h1>🔐 ESCAPE ROOM</h1>
+
+    <!-- Password display: revealed digits shown, unrevealed as "_" -->
+    <div class="password-display" id="passwordDisplay">_ _ _ _</div>
+
+    <!-- Layer progress dots -->
+    <div class="layer-indicator" id="layerDots">
+        <div class="layer-dot active" data-layer="0">Atbash</div>
+        <div class="layer-dot" data-layer="1">Caesar</div>
+        <div class="layer-dot" data-layer="2">Binary</div>
+        <div class="layer-dot" data-layer="3">Morse</div>
+    </div>
+
+    <!-- Clue + input area -->
+    <div id="layerArea">
+        <div class="clue-box">
+            <div class="clue-label" id="clueLabel">🔎 Decode this</div>
+            <div class="clue-value" id="clueValue">-----</div>
+            <div style="margin-top: 6px; font-size:0.9rem; color:#b7b5d9;" id="layerHint">Enter the digit (0-9)</div>
+        </div>
+
+        <div class="input-row">
+            <input type="text" id="guessInput" maxlength="1" placeholder="0–9" autocomplete="off" />
+            <button id="submitBtn">▶ Submit</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="reset-area">
+        <button id="resetBtn">🔄 New password (restart)</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- Cipher utilities ----------
+        const DIGIT_TO_LETTER = 'ABCDEFGHIJ';  // 0→A, 1→B, ... 9→J
+        const LETTER_TO_DIGIT = {};
+        for (let i = 0; i < 10; i++) {
+            LETTER_TO_DIGIT[DIGIT_TO_LETTER[i]] = i;
+        }
+
+        function atbash(letter) {
+            const code = letter.charCodeAt(0);
+            if (code >= 65 && code <= 90) {
+                return String.fromCharCode(90 - (code - 65));
+            }
+            return letter;
+        }
+
+        function caesar(letter, shift) {
+            const code = letter.charCodeAt(0);
+            if (code >= 65 && code <= 90) {
+                return String.fromCharCode(((code - 65 + shift) % 26) + 65);
+            }
+            return letter;
+        }
+
+        function toBinary(digit) {
+            return digit.toString(2).padStart(4, '0');
+        }
+
+        function toMorseLetter(letter) {
+            const map = {
+                'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
+                'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
+                'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---',
+                'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+                'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--',
+                'Z': '--..'
+            };
+            return map[letter] || '';
+        }
+
+        // ---------- Game state ----------
+        let passwordDigits = [];           // 4 digits
+        let revealed = [false, false, false, false];
+        let currentLayer = 0;             // 0..3
+        let gameFinished = false;
+
+        // DOM refs
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const layerDots = document.querySelectorAll('.layer-dot');
+        const clueValue = document.getElementById('clueValue');
+        const clueLabel = document.getElementById('clueLabel');
+        const layerHint = document.getElementById('layerHint');
+        const guessInput = document.getElementById('guessInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const feedback = document.getElementById('feedback');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // ---------- Generate new password ----------
+        function generatePassword() {
+            passwordDigits = [];
+            for (let i = 0; i < 4; i++) {
+                passwordDigits.push(Math.floor(Math.random() * 10));
+            }
+            revealed = [false, false, false, false];
+            currentLayer = 0;
+            gameFinished = false;
+            // Re-enable UI
+            guessInput.disabled = false;
+            submitBtn.disabled = false;
+            renderAll();
+            // Clear any feedback
+            feedback.className = 'feedback';
+            feedback.textContent = '';
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        // ---------- Render password display ----------
+        function renderPassword() {
+            let parts = [];
+            for (let i = 0; i < 4; i++) {
+                if (revealed[i]) {
+                    parts.push(passwordDigits[i]);
+                } else {
+                    parts.push('_');
+                }
+            }
+            passwordDisplay.textContent = parts.join(' ');
+        }
+
+        // ---------- Render layer dots ----------
+        function renderDots() {
+            layerDots.forEach((dot, idx) => {
+                dot.classList.remove('active', 'done');
+                if (gameFinished) {
+                    dot.classList.add('done');
+                } else if (idx === currentLayer) {
+                    dot.classList.add('active');
+                } else if (idx < currentLayer) {
+                    dot.classList.add('done');
+                }
+            });
+        }
+
+        // ---------- Generate clue for current layer ----------
+        function getClueForLayer(layer, digit) {
+            const letter = DIGIT_TO_LETTER[digit];
+            switch (layer) {
+                case 0: // Atbash
+                    return {
+                        label: '🔀 Atbash Cipher (A↔Z, B↔Y, …)',
+                        clue: atbash(letter),
+                        hint: 'Decode the letter back to a digit (0–9)'
+                    };
+                case 1: { // Caesar with random shift (fixed for the session)
+                    // We'll store the shift in a closure or re-generate each time?
+                    // To keep it consistent for the session, we'll generate it once and store in a global.
+                    if (!window._caesarShift) {
+                        window._caesarShift = Math.floor(Math.random() * 25) + 1;
+                    }
+                    const shift = window._caesarShift;
+                    return {
+                        label: `🔁 Caesar Cipher (shift = ${shift})`,
+                        clue: caesar(letter, shift),
+                        hint: 'Decode the letter back to a digit (0–9)'
+                    };
+                }
+                case 2: // Binary
+                    return {
+                        label: '💻 Binary (4-bit)',
+                        clue: toBinary(digit),
+                        hint: 'Convert binary to decimal (0–9)'
+                    };
+                case 3: { // Morse – digit → letter → Morse
+                    const morse = toMorseLetter(letter);
+                    return {
+                        label: '📡 Morse Code (letters only)',
+                        clue: morse,
+                        hint: 'Decode the Morse letter, then map A=0, B=1, … J=9'
+                    };
+                }
+                default:
+                    return { label: '', clue: '', hint: '' };
+            }
+        }
+
+        // ---------- Render current layer clue ----------
+        function renderLayer() {
+            if (gameFinished) {
+                clueLabel.textContent = '🎉 All layers solved!';
+                clueValue.textContent = '🔓';
+                layerHint.textContent = 'The password is complete!';
+                guessInput.disabled = true;
+                submitBtn.disabled = true;
+                feedback.className = 'feedback done';
+                feedback.textContent = '✨ Congratulations! You escaped! ✨';
+                return;
+            }
+
+            const digit = passwordDigits[currentLayer];
+            const info = getClueForLayer(currentLayer, digit);
+            clueLabel.textContent = info.label;
+            clueValue.textContent = info.clue;
+            layerHint.textContent = info.hint;
+            guessInput.disabled = false;
+            submitBtn.disabled = false;
+            guessInput.value = '';
+            guessInput.focus();
+            // Clear old feedback
+            feedback.className = 'feedback';
+            feedback.textContent = '';
+        }
+
+        // ---------- Render everything ----------
+        function renderAll() {
+            renderPassword();
+            renderDots();
+            renderLayer();
+        }
+
+        // ---------- Handle submit ----------
+        function handleSubmit() {
+            if (gameFinished) return;
+
+            const raw = guessInput.value.trim();
+            if (!/^[0-9]$/.test(raw)) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '⚠️ Please enter a single digit (0–9).';
+                return;
+            }
+
+            const guess = parseInt(raw, 10);
+            const correct = passwordDigits[currentLayer];
+
+            if (guess === correct) {
+                // Correct!
+                revealed[currentLayer] = true;
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Correct! Digit ${currentLayer+1} is ${correct}.`;
+
+                // Check if all revealed
+                if (revealed.every(v => v === true)) {
+                    gameFinished = true;
+                    renderAll();
+                    return;
+                }
+
+                // Move to next layer
+                currentLayer++;
+                renderAll();
+                // Keep success feedback visible (renderLayer clears it, so re-set)
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Correct! Digit ${currentLayer} is ${correct}.`;
+            } else {
+                // Wrong – stay on same layer
+                feedback.className = 'feedback error';
+                feedback.textContent = `❌ Wrong. That is not digit ${currentLayer+1}. Try again.`;
+                guessInput.value = '';
+                guessInput.focus();
+            }
+        }
+
+        // ---------- Event listeners ----------
+        submitBtn.addEventListener('click', handleSubmit);
+
+        guessInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            // Reset the Caesar shift too
+            delete window._caesarShift;
+            generatePassword();
+            // Re-focus
+            guessInput.focus();
+        });
+
+        // ---------- Start the game ----------
+        generatePassword();
+    })();
+</script>
+
+</body>
+</html>
